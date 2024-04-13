@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Movement from Mysuru to Bangalore</title>
+  <!-- Include Leaflet CSS and JavaScript -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Include Leaflet Routing Machine plugin -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <!-- Set a fixed height for the map container -->
+  <style>
+    #map {
+      height: 400px;
+    }
+    #speed {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background-color: white;
+      padding: 5px;
+      border: 1px solid #ccc;
+    }
+    #speedControls {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+    }
+    #messagePopup {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 9999;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Map container -->
+  <div id="map"></div>
+  
+  <!-- Speed display -->
+  <div id="speed">Speed: <span id="speedValue"></span> m/s</div>
+  
+  <!-- Speed control buttons -->
+  <div id="speedControls">
+    <button onclick="increaseSpeed()">+</button>
+    <button onclick="decreaseSpeed()">-</button>
+  </div>
+
+  <!-- Message popup -->
+  <div id="messagePopup"></div>
+
+  <!-- Alert sound -->
+  <audio id="alertSound" src="https://commondatastorage.googleapis.com/codeskulptor-assets/jump.ogg"></audio>
+
+  <script>
+    // Initialize the map centered on Karnataka
+    var mymap = L.map('map').setView([12.2958, 76.6394], 8);
+
+    // Add the OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(mymap);
+
+    // Initialize routing control
+    var routeControl = L.Routing.control({
+      waypoints: [
+        L.latLng(12.2958, 76.6394), // Mysuru
+        L.latLng(12.9716, 77.5946) // Bangalore
+      ],
+      routeWhileDragging: true
+    }).addTo(mymap);
+
+    // Add a marker at Mysuru
+    var mysuruMarker = L.marker([12.2958, 76.6394]).addTo(mymap);
+    mysuruMarker.bindPopup("<b>Mysuru</b>").openPopup();
+
+    // Add a marker at Bangalore
+    var bangaloreMarker = L.marker([12.9716, 77.5946]).addTo(mymap);
+    bangaloreMarker.bindPopup("<b>Bangalore</b>").openPopup();
+
+    // Mock data for randomly generated accident zones within Karnataka
+    var accidentZones = generateAccidentZones(50); // Generate 50 random accident zones
+
+    // Function to generate random accident zones within Karnataka boundaries
+    function generateAccidentZones(count) {
+      var zones = [];
+      for (var i = 0; i < count; i++) {
+        var lat = getRandomInRange(11.5, 14); // Latitude range of Karnataka
+        var lng = getRandomInRange(74.1, 78.5); // Longitude range of Karnataka
+        var severity = Math.random() < 0.5 ? 'yellow' : 'red'; // Randomly assign severity
+        zones.push([lat, lng, severity]);
+      }
+      return zones;
+    }
+
+    // Function to get a random number within a range
+    function getRandomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    // Function to add accident zones to the map
+    function addAccidentZones() {
+      accidentZones.forEach(function(zone) {
+        var color = zone[2] === 'yellow' ? '#FFFF00' : '#FF0000'; // Yellow for less accident, Red for more accident
+        L.circle(zone.slice(0, 2), { radius: 5000, color: color, fillOpacity: 0.5 }).addTo(mymap);
+      });
+    }
+
+    // Call the function to add accident zones
+    addAccidentZones();
+
+    // Global marker variable
+    var movingMarker = null;
+    var currentSpeed = 65; // Initial speed in meters per second
+
+    // Function to animate vehicle movement
+    function animateVehicle(route) {
+      var latLngs = route.coordinates;
+      var duration = route.summary.totalTime; // Duration in seconds
+
+      function move() {
+        if (latLngs.length === 0) return;
+
+        var currentLatLng = latLngs.shift();
+
+        // Check if speed exceeds 70 m/s
+        if (currentSpeed > 70) {
+          // Play alert sound
+          var alertSound = document.getElementById('alertSound');
+          alertSound.play();
+
+          // Display message popup
+          var messagePopup = document.getElementById('messagePopup');
+          messagePopup.innerHTML = "High speed detected! Reduce speed.";
+          messagePopup.style.display = "block";
+        } else {
+          // Hide message popup if speed is normal
+          var messagePopup = document.getElementById('messagePopup');
+          messagePopup.style.display = "none";
+        }
+
+        // Update marker position
+        if (movingMarker) {
+          movingMarker.setLatLng(currentLatLng);
+        } else {
+          // Create marker if it doesn't exist
+          movingMarker = L.marker(currentLatLng).addTo(mymap);
+        }
+
+        // Update speed display
+        var speedDisplay = document.getElementById('speedValue');
+        speedDisplay.textContent = currentSpeed.toFixed(2) + ' m/s'; // Rounding speed to two decimal places
+
+        if (latLngs.length > 0) {
+          setTimeout(move, 1000); // Display marker every 1 second
+        }
+      }
+
+      move();
+    }
+
+    // Function to increase speed
+    function increaseSpeed() {
+      currentSpeed += 1; // Increase speed by 5 m/s
+    }
+
+    // Function to decrease speed
+    function decreaseSpeed() {
+      currentSpeed -= 1; // Decrease speed by 5 m/s
+      currentSpeed = Math.max(0, currentSpeed); // Ensure speed doesn't go below 0 m/s
+    }
+
+    // Trigger vehicle animation when route is calculated
+    routeControl.on('routesfound', function(event) {
+      var route = event.routes[0];
+      animateVehicle(route);
+    });
+  </script>
+
+</body>
+</html>

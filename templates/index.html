@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accident Risk Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        label {
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .meter {
+            width: 100%;
+            height: 30px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .bar {
+            height: 100%;
+            background-color: #28a745; /* Low risk color */
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.5s ease;
+        }
+        .bar.high {
+            background-color: #dc3545; /* High risk color */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Accident Risk Prediction</h1>
+        <form id="prediction-form" action="/predict" method="post">
+            <label for="gender">Gender:</label>
+            <select id="gender" name="Gender">
+                <option value="" selected disabled>Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <label for="district">District:</label>
+            <select id="district" name="District">
+                <option value="" selected disabled>Select district</option>
+                <option value="District A">District A</option>
+                <option value="District B">District B</option>
+                <option value="District C">District C</option>
+            </select>
+            <label for="weather">Weather:</label>
+            <select id="weather" name="Weather">
+                <option value="" selected disabled>Select weather</option>
+                <option value="Sunny">Sunny</option>
+                <option value="Rainy">Rainy</option>
+                <option value="Cloudy">Cloudy</option>
+            </select>
+            <label for="road_type">Road Type:</label>
+            <select id="road_type" name="Road_Type">
+                <option value="" selected disabled>Select road type</option>
+                <option value="Highway">Highway</option>
+                <option value="City Road">City Road</option>
+            </select>
+            <label for="vehicle_type">Vehicle Type:</label>
+            <select id="vehicle_type" name="Vehicle_Type">
+                <option value="" selected disabled>Select vehicle type</option>
+                <option value="Car">Car</option>
+                <option value="Bike">Bike</option>
+                <option value="Truck">Truck</option>
+            </select>
+            <label for="time">Time:</label>
+            <select id="time" name="Time">
+                <option value="" selected disabled>Select time</option>
+                <option value="Morning">Morning</option>
+                <option value="Afternoon">Afternoon</option>
+                <option value="Evening">Evening</option>
+                <option value="Night">Night</option>
+            </select>
+            <button type="submit">Predict</button>
+        </form>
+        <div class="meter">
+            <div class="bar" id="risk-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        // Function to update risk score meter
+        function updateRiskScore(score) {
+            var bar = document.getElementById('risk-bar');
+            var width = (score / 5) * 100; // Scale risk score to percentage
+            bar.style.width = width + '%';
+            if (score >= 3) {
+                bar.classList.add('high'); // Apply high risk color for score 3 and above
+            } else {
+                bar.classList.remove('high');
+            }
+        }
+    </script>
+</body>
+</html>

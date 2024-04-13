@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route and Estimated Time Calculation</title>
+  <!-- Include Leaflet CSS and JavaScript -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Include Leaflet Routing Machine plugin -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <!-- Set a fixed height for the map container -->
+  <style>
+    #map {
+      height: 400px;
+      margin-bottom: 20px;
+    }
+
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+      margin-right: 70%;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: #007bff;
+    }
+
+    .calculate-button {
+      text-align: right;
+    }
+
+    .calculate-button button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .calculate-button button:hover {
+      background-color: #0056b3;
+    }
+
+    .redirect-button {
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .redirect-button button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .redirect-button button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Source and Destination input fields -->
+  <div class="input-container">
+    <label for="source">Source:</label>
+    <input type="text" id="source" placeholder="Enter source place name">
+  </div>
+  <div class="input-container">
+    <label for="destination">Destination:</label>
+    <input type="text" id="destination" placeholder="Enter destination place name">
+  </div>
+
+  <!-- Map container -->
+  <div id="map"></div>
+
+<!-- Redirect Button to Mtb.html -->
+<a href="{{ url_for('redirect_to_mtb') }}" class="btn btn-primary">Start</a>
+
+
+  <script>
+    // Initialize the map centered on Madurai
+    var mymap = L.map('map').setView([9.9252, 78.1198], 13);
+
+    // Add the OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(mymap);
+
+    // Add a button to trigger route calculation
+    var calculateButton = L.control({ position: 'topright' });
+
+    calculateButton.onAdd = function(map) {
+      var div = L.DomUtil.create('div', 'calculate-button');
+      div.innerHTML = '<button onclick="calculateRoute()">Calculate Route</button>';
+      return div;
+    };
+
+    calculateButton.addTo(mymap);
+
+    // Function to convert place name to coordinates
+    function geocodePlace(placeName, callback) {
+      fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(placeName) + '&format=json')
+        .then(response => response.json())
+        .then(data => {
+          if (data.length > 0) {
+            callback([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+          } else {
+            alert('Place not found!');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while geocoding the place.');
+        });
+    }
+
+    // Function to calculate the route
+    function calculateRoute() {
+      var sourcePlace = document.getElementById('source').value.trim();
+      var destinationPlace = document.getElementById('destination').value.trim();
+
+      if (!sourcePlace || !destinationPlace) {
+        alert('Please enter both source and destination place names.');
+        return;
+      }
+
+      // Convert place names to coordinates
+      geocodePlace(sourcePlace, function(sourceCoordinates) {
+        geocodePlace(destinationPlace, function(destinationCoordinates) {
+          // Remove existing route if any
+          if (window.routeControl) {
+            mymap.removeControl(window.routeControl);
+          }
+
+          // Add markers for source and destination
+          var sourceMarker = L.marker(sourceCoordinates).addTo(mymap);
+          sourceMarker.bindPopup("<b>Source</b>").openPopup();
+
+          var destinationMarker = L.marker(destinationCoordinates).addTo(mymap);
+          destinationMarker.bindPopup("<b>Destination</b>").openPopup();
+
+          // Initialize routing control
+          window.routeControl = L.Routing.control({
+            waypoints: [
+              L.latLng(sourceCoordinates),
+              L.latLng(destinationCoordinates)
+            ],
+            routeWhileDragging: true
+          }).addTo(mymap);
+        });
+      });
+    }
+
+    // Function to redirect to Mtb.html
+    function redirectToMtb() {
+        window.location.href = "/static/Mtb.html";  // Change the path as needed
+    }
+
+  </script>
+
+</body>
+</html>
